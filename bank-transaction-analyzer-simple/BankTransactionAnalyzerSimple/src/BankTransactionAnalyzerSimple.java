@@ -2,21 +2,45 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Month;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.prefs.BackingStoreException;
 
 public class BankTransactionAnalyzerSimple {
 
   private static final String RESOURCES = "src/main/resources/";
 
   public static void main(final String... args) throws IOException {
-    final Path path = Paths.get(RESOURCES + args[0]);
+    final BankStatementCSVParser bankStatementParse = new BankStatementCSVParser();
+    final String fileName = args[0];
+    final Path path = Paths.get(RESOURCES + fileName);
     final List<String> lines = Files.readAllLines(path);
-    double total = 0d;
-    for (final String line : lines) {
-      final String[] columns = line.split(",");
-      final double amount = Double.parseDouble(columns[1]);
-      total += amount;
-    }
-    System.out.println("The total for all transactions in January is " + total);
+    final List<BankTransaction> bankTransactions = bankStatementParse.parseLinesFromCSV(lines);
+
+    Month month = Month.FEBRUARY;
+
+    System.out.println("The total for all transactions is " + calculateTotalAmount(bankTransactions));
+    System.out.println("Transactions in "+month.toString()+" is " + selectInMonth(bankTransactions, month));
+
   }
+
+  public static double calculateTotalAmount(final List<BankTransaction> bankTransactions){
+    double total = 0d;
+    for (final BankTransaction bankTransaction : bankTransactions) {
+      total += bankTransaction.getAmount();
+    }
+    return total;
+  }
+
+  public static List<BankTransaction> selectInMonth(final List<BankTransaction> bankTransactions, final Month month){
+    final List<BankTransaction> bankTransactionsInMonth = new ArrayList<>();
+    for (final BankTransaction bankTransaction: bankTransactions) {
+      if(bankTransaction.getDate().getMonth() == month){
+        bankTransactionsInMonth.add(bankTransaction);
+      }
+    }
+    return bankTransactionsInMonth;
+  }
+
 }
